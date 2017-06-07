@@ -19,7 +19,7 @@ public class GravPullPoint : MonoBehaviour {
     }
 
     void Update () {
-        if (fc && fc.interplanitaryFlight)
+        if (fc && fc.interplanetaryFlight)
         {
             Vector3 v = transform.position - fc.transform.position;
             float distSq = Vector3.SqrMagnitude(v);

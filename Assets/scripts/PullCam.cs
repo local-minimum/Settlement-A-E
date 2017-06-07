@@ -18,12 +18,13 @@ public class PullCam : MonoBehaviour {
         camOffset = transform.position - puller.position;	
 	}
 	
-	void Update () {
+	void LateUpdate () {
         Vector3 target = puller.position + camOffset;
 
-        if (Vector3.SqrMagnitude(transform.position - target) > noPullSqDist)
+        float sqDist = Vector3.SqrMagnitude(transform.position - target);
+        if (sqDist > noPullSqDist)
         {
-            transform.position = Vector3.Lerp(transform.position, target, attack * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, target, sqDist / noPullSqDist * attack * Time.deltaTime);
         }
 	}
 }

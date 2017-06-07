@@ -22,14 +22,16 @@ public class OrbitControl : MonoBehaviour {
     [SerializeField]
     float attackAltitude = 0.9f;
 
+    Vector3 entryVelocity;
+
 	void Update () {
         if (fc)
         {
-            if (fc.interplanitaryFlight && Input.GetButtonDown("Orbit"))
+            if (fc.interplanetaryFlight && Input.GetButtonDown("Orbit"))
             {
-                fc.interplanitaryFlight = false;
-
-                Vector3 shipHeading = fc.rb.velocity.normalized;
+                fc.interplanetaryFlight = false;
+                entryVelocity = fc.rb.velocity;
+                Vector3 shipHeading = entryVelocity.normalized;
 
                 fc.rb.Sleep();
 
@@ -38,34 +40,28 @@ public class OrbitControl : MonoBehaviour {
                 planetToShipDirection = planetToShipDirection.normalized;
                 
                 axis = Vector3.Cross(planetToShipDirection, shipHeading);
-
                 //TODO: What is the angle of the ship to its own speed vector?
 
-
-            } else if (Input.GetButtonUp("Orbit") && !fc.interplanitaryFlight)
+            } else if (Input.GetButtonUp("Orbit") && !fc.interplanetaryFlight)
             {
-                fc.LeaveOrbit(angularSpeed / (2 * Mathf.PI) * flightAltitude);
+                fc.LeaveOrbit(entryVelocity);
             }
 
-            if (!fc.interplanitaryFlight)
+            if (!fc.interplanetaryFlight)
             {
                 curAltitude = Mathf.Lerp(curAltitude, flightAltitude, attackAltitude * Time.deltaTime);
+
+                float angle = angularSpeed * Time.deltaTime;
+
+                Quaternion rotation = Quaternion.Euler(angle * axis);
+
                 Vector3 planetToShipDirection = (fc.transform.position - planet.position).normalized;
+                Vector3 curDirection = rotation * planetToShipDirection;
+                Vector3 tangent = Vector3.Cross(planetToShipDirection, axis);
 
-                /*
-                curAngle += angularSpeed * Time.deltaTime;
-                curAngle %= 360;
-                if (curAngle < 0)
-                {
-                    curAngle += 360;
-                }*/
+                fc.transform.position = planet.transform.position + curAltitude * curDirection;
+                fc.transform.rotation *= Quaternion.Euler(angle * tangent); // RotateAround(fc.transform.position, axis, angle);
 
-                Quaternion rotation = Quaternion.Euler(angularSpeed * Time.deltaTime * axis);
-                planetToShipDirection = rotation * planetToShipDirection;
-
-                fc.transform.position = planet.transform.position + curAltitude * planetToShipDirection;
-
-                //Rotate only belly bit facing planet
             }
         }
 	}
@@ -81,7 +77,7 @@ public class OrbitControl : MonoBehaviour {
 
     private void OnTriggerExit(Collider other)
     {
-        if (fc && fc.gameObject == other.gameObject && fc.interplanitaryFlight)
+        if (fc && fc.gameObject == other.gameObject && fc.interplanetaryFlight)
         {
             fc = null;
         }

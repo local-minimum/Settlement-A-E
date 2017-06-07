@@ -16,7 +16,7 @@ public class FlightController : MonoBehaviour {
     [SerializeField]
     bool flippedAngularDirection = true;
 
-    public bool interplanitaryFlight = true;
+    public bool interplanetaryFlight = true;
 
     public Rigidbody rb;
 
@@ -26,7 +26,7 @@ public class FlightController : MonoBehaviour {
 	
 	void Update () {
 
-        if (interplanitaryFlight)
+        if (interplanetaryFlight)
         {
             float thrust = Input.GetAxis("Vertical");
             float angular = Input.GetAxis("Horizontal");
@@ -39,15 +39,13 @@ public class FlightController : MonoBehaviour {
         }
 	}
 
-    public void LeaveOrbit(float orbitSpeed)
+    public void LeaveOrbit(Vector3 velocity)
     {
-        Vector3 speed = transform.forward * orbitSpeed;
-        speed.z = 0;
-
         Vector3 pos = transform.position;
         pos.z = 0;
         transform.position = pos;
-        rb.velocity = speed;
-        interplanitaryFlight = true;
+        rb.velocity = velocity;
+        interplanetaryFlight = true;
+        transform.rotation = Quaternion.identity;
     }
 }
