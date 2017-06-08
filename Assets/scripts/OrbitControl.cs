@@ -81,11 +81,12 @@ public class OrbitControl : MonoBehaviour {
 
     bool InOrbitExitArea {
         get
-        {
+        {            
             Vector3 euler = fc.transform.rotation.eulerAngles;
-            float x = Mathf.Min(euler.x, Mathf.Abs(360f - euler.x));
-            float y = Mathf.Min(euler.y, Mathf.Abs(360f - euler.y));
-            return x < 3f && y < 3f;
+            float y = Mathf.Abs(-90f - euler.y) % 360f;
+            float z = Mathf.Abs(90f - euler.z) % 360f;
+            Debug.Log(string.Format("{0}, {1}", y, z));
+            return y < 3f && z < 3f;
         }
     }
     
