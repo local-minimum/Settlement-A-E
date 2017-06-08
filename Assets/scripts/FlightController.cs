@@ -34,7 +34,7 @@ public class FlightController : MonoBehaviour {
             thrust *= forwardThrust * (Mathf.Sign(thrust) == 1f ? 1f : reverseThrustFactor) * Time.deltaTime;
             angular *= forwardThrust * angularThrustFactor * Time.deltaTime * (flippedAngularDirection ? -1f : 1f);
 
-            rb.AddForce(transform.up * thrust);
+            rb.AddForce(transform.forward * thrust);
             rb.AddTorque(Vector3.forward * angular);
         }
 	}
@@ -47,8 +47,8 @@ public class FlightController : MonoBehaviour {
         rb.velocity = velocity;
         interplanetaryFlight = true;
         Vector3 euler = transform.rotation.eulerAngles;
-        euler.x = 0f;
-        euler.y = 0f;
+        euler.y = -90f;
+        euler.z = 90f;
         transform.rotation = Quaternion.identity;
         transform.Rotate(euler);
     }

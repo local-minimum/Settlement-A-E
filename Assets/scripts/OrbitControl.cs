@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum OrbitState { Entering, Orbiting, Exiting};
+
 public class OrbitControl : MonoBehaviour {
 
     FlightController fc;
@@ -24,6 +26,8 @@ public class OrbitControl : MonoBehaviour {
 
     Vector3 entryVelocity;
 
+    OrbitState orbitState;
+
 	void Update () {
         if (fc)
         {
@@ -40,11 +44,12 @@ public class OrbitControl : MonoBehaviour {
                 planetToShipDirection = planetToShipDirection.normalized;
                 
                 axis = Vector3.Cross(planetToShipDirection, shipHeading);
-                //TODO: What is the angle of the ship to its own speed vector?
+
+                orbitState = OrbitState.Entering;
 
             } else if (Input.GetButtonUp("Orbit") && !fc.interplanetaryFlight)
             {
-                fc.LeaveOrbit(entryVelocity);
+                orbitState = OrbitState.Exiting;                
             }
 
             if (!fc.interplanetaryFlight)
@@ -57,15 +62,33 @@ public class OrbitControl : MonoBehaviour {
 
                 Vector3 planetToShipDirection = (fc.transform.position - planet.position).normalized;
                 Vector3 curDirection = rotation * planetToShipDirection;
-                Vector3 tangent = Vector3.Cross(planetToShipDirection, axis);
+                Vector3 tangent = Vector3.Cross(axis, planetToShipDirection);
 
                 fc.transform.position = planet.transform.position + curAltitude * curDirection;
-                fc.transform.rotation *= Quaternion.Euler(angle * tangent); // RotateAround(fc.transform.position, axis, angle);
+                fc.transform.rotation = Quaternion.LookRotation(tangent, planetToShipDirection);
+                //fc.transform.rotation *= Quaternion.Euler(angle * tangent); // RotateAround(fc.transform.position, axis, angle);
 
+                if (orbitState == OrbitState.Entering)
+                {
+                    orbitState = OrbitState.Orbiting;
+                } else if (orbitState == OrbitState.Exiting && InOrbitExitArea)
+                {
+                    fc.LeaveOrbit(entryVelocity);
+                }
             }
         }
 	}
 
+    bool InOrbitExitArea {
+        get
+        {
+            Vector3 euler = fc.transform.rotation.eulerAngles;
+            float x = Mathf.Min(euler.x, Mathf.Abs(360f - euler.x));
+            float y = Mathf.Min(euler.y, Mathf.Abs(360f - euler.y));
+            return x < 3f && y < 3f;
+        }
+    }
+    
     private void OnTriggerEnter(Collider other)
     {
         FlightController fc = other.GetComponent<FlightController>();
