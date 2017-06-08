@@ -46,6 +46,10 @@ public class FlightController : MonoBehaviour {
         transform.position = pos;
         rb.velocity = velocity;
         interplanetaryFlight = true;
+        Vector3 euler = transform.rotation.eulerAngles;
+        euler.x = 0f;
+        euler.y = 0f;
         transform.rotation = Quaternion.identity;
+        transform.Rotate(euler);
     }
 }
