@@ -9,25 +9,25 @@ public class OrbitControl : MonoBehaviour {
     FlightController fc;
 
     [SerializeField]
-    float angularSpeed = 10;
+    float targetAngularSpeed = 10;
 
-    [SerializeField]
-    float flightAltitude = 7;
+    float angularSpeed = 0;
 
     [SerializeField]
     Transform planet;
 
     Vector3 axis;
 
-    float curAltitude;
+    float flightAltitude;
 
     [SerializeField]
-    float attackAltitude = 0.9f;
+    float attackSpeed = 0.9f;
 
     float angular = 0f;
 
     Vector3 entryVelocity;
-
+    Vector3 shipEntryHeading;
+    Vector3 tangent;
     OrbitState orbitState;
 
 	void Update () {
@@ -37,22 +37,24 @@ public class OrbitControl : MonoBehaviour {
             {
                 fc.interplanetaryFlight = false;
                 entryVelocity = fc.rb.velocity;
-                Vector3 shipHeading = entryVelocity.normalized;
-
+                shipEntryHeading = entryVelocity.normalized;
+                
                 angular = Quaternion.FromToRotation(
                     fc.transform.forward,
-                    shipHeading
+                    shipEntryHeading
                 ).eulerAngles.magnitude;
 
-                Debug.Log(angular);
+                //Debug.Log(angular);
 
                 fc.rb.Sleep();
 
                 Vector3 planetToShipDirection = (fc.transform.position - planet.position);
-                curAltitude = planetToShipDirection.magnitude;
+
+                flightAltitude = Vector3.Dot(planetToShipDirection, -1f * Vector3.forward);
+
                 planetToShipDirection = planetToShipDirection.normalized;
-                
-                axis = Vector3.Cross(planetToShipDirection, shipHeading);
+                angularSpeed =  360f * entryVelocity.magnitude / (2 * Mathf.PI * flightAltitude) ;            
+                axis = Vector3.Cross(planetToShipDirection, shipEntryHeading);
 
                 orbitState = OrbitState.Entering;
 
@@ -63,41 +65,49 @@ public class OrbitControl : MonoBehaviour {
 
             if (!fc.interplanetaryFlight)
             {
-                curAltitude = Mathf.Lerp(curAltitude, flightAltitude, attackAltitude * Time.deltaTime);
-
+                angularSpeed = Mathf.Lerp(angularSpeed, targetAngularSpeed, attackSpeed * Time.deltaTime);
                 float angle = angularSpeed * Time.deltaTime;
+
 
                 Quaternion rotation = Quaternion.Euler(angle * axis);
 
                 Vector3 planetToShipDirection = (fc.transform.position - planet.position).normalized;
                 Vector3 curDirection = rotation * planetToShipDirection;
-                Vector3 tangent = Vector3.Cross(axis, planetToShipDirection);
+                tangent = Vector3.Cross(axis, planetToShipDirection);
 
-                fc.transform.position = planet.transform.position + curAltitude * curDirection;
+                fc.transform.position = planet.transform.position + flightAltitude * curDirection;
                 fc.transform.Rotate(axis, angle, Space.World);
+
+                //Angular rotation
                 angular += Input.GetAxis("Horizontal");
                 fc.transform.rotation = Quaternion.LookRotation(tangent, planetToShipDirection);
                 fc.transform.Rotate(planetToShipDirection, angular, Space.World);
+
+                //Orbit axis rotation
+                float axisMomentum = Input.GetAxis("Vertical") *
+                    Vector3.Dot(fc.transform.forward, tangent);
+
+
                 if (orbitState == OrbitState.Entering)
                 {
                     orbitState = OrbitState.Orbiting;
                 } else if (orbitState == OrbitState.Exiting && InOrbitExitArea)
                 {
-                    fc.LeaveOrbit(entryVelocity * Vector3.Dot(tangent, entryVelocity.normalized));
+                    fc.LeaveOrbit(angularSpeed * 2 * Mathf.PI * flightAltitude / 360f * shipEntryHeading);
                 }
             }
         }
 	}
 
+    [SerializeField, Range(0, 10)]
+    float exitAngleTolerance = 2f;
+
     bool InOrbitExitArea {
         get
-        {            
-            Vector3 euler = fc.transform.rotation.eulerAngles;
-            float y = Mathf.Min(Mathf.Abs(270 - euler.y), Mathf.Abs(-90f - euler.y) % 360f);
-            float z = Mathf.Abs(90f - euler.z) % 360f;
-            //Debug.Log(string.Format("{0}, {1}", y, z));
-            float tolerance = 5f;
-            return y < tolerance && z < tolerance;
+        {
+            float a = Quaternion.FromToRotation(tangent, shipEntryHeading).eulerAngles.magnitude;
+            a = Mathf.Min(a, Mathf.Abs(360 - a));
+            return a < exitAngleTolerance;
         }
     }
     
