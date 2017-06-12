@@ -24,6 +24,8 @@ public class OrbitControl : MonoBehaviour {
     [SerializeField]
     float attackAltitude = 0.9f;
 
+    float angular = 0f;
+
     Vector3 entryVelocity;
 
     OrbitState orbitState;
@@ -36,6 +38,13 @@ public class OrbitControl : MonoBehaviour {
                 fc.interplanetaryFlight = false;
                 entryVelocity = fc.rb.velocity;
                 Vector3 shipHeading = entryVelocity.normalized;
+
+                angular = Quaternion.FromToRotation(
+                    fc.transform.forward,
+                    shipHeading
+                ).eulerAngles.magnitude;
+
+                Debug.Log(angular);
 
                 fc.rb.Sleep();
 
@@ -65,15 +74,16 @@ public class OrbitControl : MonoBehaviour {
                 Vector3 tangent = Vector3.Cross(axis, planetToShipDirection);
 
                 fc.transform.position = planet.transform.position + curAltitude * curDirection;
+                fc.transform.Rotate(axis, angle, Space.World);
+                angular += Input.GetAxis("Horizontal");
                 fc.transform.rotation = Quaternion.LookRotation(tangent, planetToShipDirection);
-                //fc.transform.rotation *= Quaternion.Euler(angle * tangent); // RotateAround(fc.transform.position, axis, angle);
-
+                fc.transform.Rotate(planetToShipDirection, angular, Space.World);
                 if (orbitState == OrbitState.Entering)
                 {
                     orbitState = OrbitState.Orbiting;
                 } else if (orbitState == OrbitState.Exiting && InOrbitExitArea)
                 {
-                    fc.LeaveOrbit(entryVelocity);
+                    fc.LeaveOrbit(entryVelocity * Vector3.Dot(tangent, entryVelocity.normalized));
                 }
             }
         }
@@ -83,10 +93,11 @@ public class OrbitControl : MonoBehaviour {
         get
         {            
             Vector3 euler = fc.transform.rotation.eulerAngles;
-            float y = Mathf.Abs(-90f - euler.y) % 360f;
+            float y = Mathf.Min(Mathf.Abs(270 - euler.y), Mathf.Abs(-90f - euler.y) % 360f);
             float z = Mathf.Abs(90f - euler.z) % 360f;
-            Debug.Log(string.Format("{0}, {1}", y, z));
-            return y < 3f && z < 3f;
+            //Debug.Log(string.Format("{0}, {1}", y, z));
+            float tolerance = 5f;
+            return y < tolerance && z < tolerance;
         }
     }
     
