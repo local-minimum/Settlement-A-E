@@ -37,7 +37,11 @@ public class ConversationOption : MonoBehaviour {
     }
 
     #region TimeOut
+
     Material mat;
+
+    [SerializeField]
+    Image effectImage;
 
     [SerializeField]
     string matProperty = "_DetailMask";
@@ -117,7 +121,7 @@ public class ConversationOption : MonoBehaviour {
 
     private void Start()
     {
-        mat = GetComponent<Image>().material;
+        mat = effectImage.material;
         anim = GetComponent<Animator>();
         ShowOption("", "Welcome");
     }
