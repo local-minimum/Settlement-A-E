@@ -3,10 +3,40 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public delegate void OptionSelection(string identifier);
+
 public class ConversationOption : MonoBehaviour {
 
-    bool interactable = true;
+    public event OptionSelection OnOptionSelected;
 
+    [SerializeField]
+    KeyCode key = KeyCode.Z;
+
+    [SerializeField]
+    Text keyText;
+
+    [SerializeField]
+    Text titleText;
+
+    string optionIdentifier;
+
+    public bool IsOption(string identifier)
+    {
+        return !string.IsNullOrEmpty(identifier) && identifier == optionIdentifier;
+    }
+
+    private void Update()
+    {
+        if (interactable)
+        {
+            if (Input.GetKeyDown(key))
+            {
+                SelectOption();
+            }
+        }
+    }
+
+    #region TimeOut
     Material mat;
 
     [SerializeField]
@@ -23,11 +53,6 @@ public class ConversationOption : MonoBehaviour {
 
     [SerializeField, Range(0.1f, 2f)]
     float animDuration = 0.6f;
-
-    private void Start()
-    {
-        mat = GetComponent<Image>().material;
-    }
 
     public void AnimateMaterialEffect()
     {
@@ -48,13 +73,53 @@ public class ConversationOption : MonoBehaviour {
         }
     }
 
+    #endregion
+
+    Animator anim;
+
+    bool interactable = true;
+
     public void DeactivateInteractions()
     {
         interactable = false;
+        anim.SetTrigger("Remove");
     }
 
-    public void EnableInteractions()
+    public void ShowOption(string identifier, string text)
     {
+        optionIdentifier = identifier;
+        titleText.text = text;
+        keyText.text = key.ToString();
         interactable = true;
+        anim.SetTrigger("Introduce");
     }
+
+    public void SelectOption()
+    {
+        interactable = false;
+        if (OnOptionSelected != null)
+        {
+            OnOptionSelected(optionIdentifier);
+        } else
+        {
+            DeactivateInteractions();
+        }
+    }
+
+    public void OptionHoverStart()
+    {
+    }
+
+    public void OptionHoverEnd()
+    {
+
+    }
+
+    private void Start()
+    {
+        mat = GetComponent<Image>().material;
+        anim = GetComponent<Animator>();
+        ShowOption("", "Welcome");
+    }
+
 }
